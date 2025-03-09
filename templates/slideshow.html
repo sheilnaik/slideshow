@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Slideshow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="slideshow-page">
+    <div id="slideshow-container">
+        <!-- Images will be loaded here via JavaScript -->
+        <div id="loading">Loading photos...</div>
+    </div>
+
+    <!-- Hamburger menu icon -->
+    <div class="hamburger-icon" id="hamburger-icon">
+        <div class="bar1"></div>
+        <div class="bar2"></div>
+        <div class="bar3"></div>
+    </div>
+
+    <!-- Slideshow controls in dropdown menu -->
+    <div class="slideshow-controls" id="slideshow-controls">
+        <a href="{{ url_for('index') }}" class="btn-back">Back to Settings</a>
+        <button id="btn-play-pause" class="btn-control">Pause</button>
+        <button id="btn-prev" class="btn-control">Previous</button>
+        <button id="btn-next" class="btn-control">Next</button>
+        <button id="btn-fullscreen" class="btn-control btn-fullscreen">Fullscreen</button>
+    </div>
+
+    <script>
+        // Pass configuration from Flask to JavaScript
+        const slideshowConfig = {
+            effect: "{{ effect }}",
+            displayTime: parseInt("{{ display_time }}") * 1000, // Convert to milliseconds
+            order: "{{ order }}",
+            photos: JSON.parse('{{ photos|tojson|safe }}') // Parse the JSON string from Flask
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/slideshow.js') }}"></script>
+</body>
+</html> 

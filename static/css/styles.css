@@ -1,0 +1,346 @@
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+    min-height: 100vh;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+/* Welcome Card */
+.welcome-card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+}
+
+h1 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    font-size: 2.2rem;
+}
+
+p {
+    margin-bottom: 1.5rem;
+    color: #5d6d7e;
+}
+
+/* Form Elements */
+.option-group {
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.radio-group {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.radio-group label {
+    font-weight: normal;
+    margin-left: 0.3rem;
+    cursor: pointer;
+}
+
+select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    background-color: white;
+}
+
+/* Begin Button */
+.begin-button {
+    margin-top: 1rem;
+    padding: 1rem 2rem;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+.begin-button:hover {
+    background-color: #2980b9;
+}
+
+/* Instructions */
+.instructions {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+    text-align: left;
+}
+
+.instructions h3 {
+    margin-bottom: 0.8rem;
+    color: #2c3e50;
+}
+
+/* Slideshow Page */
+.slideshow-page {
+    overflow: hidden;
+    background-color: black;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+#slideshow-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.slide {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+}
+
+.active {
+    opacity: 1;
+}
+
+.slide img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Special handling for vertical photos */
+.slide.vertical-photo {
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
+/* Vertical Dual Mode Styling */
+.vertical-dual-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    z-index: 1;
+}
+
+.vertical-dual-container.active {
+    opacity: 1;
+    z-index: 2;
+}
+
+.vertical-dual-photo {
+    height: 100%;
+    flex: 1;
+    max-width: 48%; /* Reduced from 49% to account for wider separator */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.vertical-dual-photo img {
+    max-height: 98%;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.vertical-dual-separator {
+    width: 4px;
+    height: 100%;
+    background-color: #000;
+    margin: 0 15px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Hamburger Menu */
+.hamburger-icon {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    z-index: 100;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.slideshow-page:hover .hamburger-icon,
+.hamburger-icon:hover,
+.slideshow-controls:hover ~ .hamburger-icon {
+    opacity: 1;
+}
+
+.hamburger-icon .bar1,
+.hamburger-icon .bar2,
+.hamburger-icon .bar3 {
+    width: 25px;
+    height: 3px;
+    background-color: white;
+    margin: 3px 0;
+    transition: 0.4s;
+    border-radius: 2px;
+}
+
+/* Controls */
+.slideshow-controls {
+    position: fixed;
+    top: 70px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 99;
+    border-radius: 8px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+}
+
+.slideshow-controls.visible,
+.hamburger-icon:hover ~ .slideshow-controls,
+.slideshow-controls:hover {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+}
+
+.btn-control, .btn-back {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    margin: 0.5rem 0;
+    font-size: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+}
+
+.btn-fullscreen {
+    margin-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 1rem;
+}
+
+.btn-control:hover, .btn-back:hover {
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+#loading {
+    color: white;
+    font-size: 1.5rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .welcome-card {
+        padding: 1.5rem;
+    }
+    
+    .hamburger-icon {
+        top: 10px;
+        left: 10px;
+    }
+    
+    .slideshow-controls {
+        top: 60px;
+        left: 10px;
+        padding: 10px;
+    }
+    
+    .btn-control, .btn-back {
+        padding: 8px;
+        font-size: 0.9rem;
+        width: 130px;
+    }
+}
+
+.dual-slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: black;
+    height: 100%;
+    width: 100%;
+}
+
+.vertical-image {
+    max-height: 98%;
+    max-width: 45%;
+    object-fit: contain;
+}
+
+.vertical-dual-separator {
+    width: 4px;
+    height: 100%;
+    background-color: #000;
+    margin: 0 15px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+} 

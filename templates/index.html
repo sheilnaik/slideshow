@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Slideshow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="welcome-card">
+            <h1>Welcome to Photo Slideshow</h1>
+            <p>Configure your slideshow experience and click the button below to begin.</p>
+            
+            <form action="{{ url_for('slideshow') }}" method="get">
+                <div class="option-group">
+                    <label for="effect">Animation Effect:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="vertical-dual" name="effect" value="vertical-dual" checked>
+                        <label for="vertical-dual">Vertical Dual</label>
+                        
+                        <input type="radio" id="standard" name="effect" value="standard">
+                        <label for="standard">Standard Slideshow</label>
+                    </div>
+                </div>
+                
+                <div class="option-group">
+                    <label for="display_time">Display Time (seconds):</label>
+                    <select name="display_time" id="display_time">
+                        <option value="3">3 seconds</option>
+                        <option value="5">5 seconds</option>
+                        <option value="7">7 seconds</option>
+                        <option value="10" selected>10 seconds</option>
+                        <option value="15">15 seconds</option>
+                    </select>
+                </div>
+                
+                <div class="option-group">
+                    <label for="order">Photo Order:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="random" name="order" value="random" checked>
+                        <label for="random">Random</label>
+                        
+                        <input type="radio" id="sequential" name="order" value="sequential">
+                        <label for="sequential">Sequential</label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="begin-button">Begin Slideshow</button>
+            </form>
+            
+            <div class="instructions">
+                <h3>How to add photos:</h3>
+                <p>Place your photos in the "photos" folder within the project directory.</p>
+                <p>Supported formats: .jpg, .jpeg, .png, .gif, .heic, .heif</p>
+                <p><strong>Vertical Dual mode:</strong> Shows two vertical photos side by side on widescreen displays, while displaying landscape photos normally.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
