@@ -19,11 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let isPlaying = true;
     let images = [];
     let effect = 'standard';
-    let verticalImages = [];
-    let landscapeImages = [];
     let menuTimeout = null;
     let isFullscreen = false;
-    let folderPath = '';
+    let imageOrientation = {}; // Store orientation for each image
     
     // Initialize slideshow with configuration from Flask
     function init() {
@@ -37,25 +35,22 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`Total images: ${images.length} from folder: ${folderPath}`);
         
         if (effect === 'vertical-dual') {
-            preloadAndSortImages(() => {
-                console.log(`Sorted into ${verticalImages.length} vertical and ${landscapeImages.length} landscape images`);
-                createSlides();
+            preloadAndDetectOrientation(() => {
+                createOptimizedSlides();
                 showSlide(0);
                 startSlideshow();
                 loadingElement.style.display = 'none';
             });
         } else {
-            createSlides();
+            createStandardSlides();
             showSlide(0);
             startSlideshow();
             loadingElement.style.display = 'none';
         }
     }
     
-    function preloadAndSortImages(callback) {
+    function preloadAndDetectOrientation(callback) {
         let loadedCount = 0;
-        verticalImages = [];
-        landscapeImages = [];
         
         if (images.length === 0) {
             console.error("No images to display");
@@ -63,29 +58,35 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        console.log("Starting to preload and sort images");
+        console.log("Preloading images and detecting orientation");
         
-        images.forEach(imgSrc => {
+        images.forEach((imgSrc, index) => {
             const img = new Image();
             img.onload = function() {
+                // Store orientation information
+                imageOrientation[imgSrc] = {
+                    isVertical: this.height > this.width,
+                    width: this.width,
+                    height: this.height
+                };
+                
                 if (this.height > this.width) {
-                    verticalImages.push(imgSrc);
-                    console.log(`Vertical image detected: ${imgSrc}`);
+                    console.log(`Image ${index+1} is vertical: ${imgSrc}`);
                 } else {
-                    landscapeImages.push(imgSrc);
-                    console.log(`Landscape image detected: ${imgSrc}`);
+                    console.log(`Image ${index+1} is landscape: ${imgSrc}`);
                 }
+                
                 loadedCount++;
-                console.log(`Loaded ${loadedCount}/${images.length} images`);
+                loadingElement.textContent = `Loading photos... (${loadedCount}/${images.length})`;
+                
                 if (loadedCount === images.length) {
-                    console.log("All images loaded and sorted");
+                    console.log("All images loaded and orientation detected");
                     callback();
                 }
             };
             img.onerror = function() {
                 console.error('Failed to load image:', imgSrc);
                 loadedCount++;
-                loadingElement.textContent = `Error loading some images (${loadedCount}/${images.length})`;
                 if (loadedCount === images.length) {
                     callback();
                 }
@@ -94,18 +95,78 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    function createSlides() {
+    function createOptimizedSlides() {
         slideshowContainer.innerHTML = '';
         
-        if (effect === 'vertical-dual') {
-            createDualSlides();
-        } else {
-            createStandardSlides();
+        // Process images in the original order (which may be random)
+        for (let i = 0; i < images.length; i++) {
+            const currentImg = images[i];
+            
+            // Check if current image is vertical
+            if (imageOrientation[currentImg] && imageOrientation[currentImg].isVertical) {
+                // Look ahead to see if the next image is also vertical
+                if (i + 1 < images.length) {
+                    const nextImg = images[i + 1];
+                    
+                    if (imageOrientation[nextImg] && imageOrientation[nextImg].isVertical) {
+                        // Create a dual slide with both vertical images
+                        createDualSlide(currentImg, nextImg);
+                        i++; // Skip the next image since we've used it
+                        continue;
+                    }
+                }
+                
+                // If we get here, either there's no next image or it's not vertical
+                // Create a standard slide for this single vertical image
+                createSingleSlide(currentImg);
+            } else {
+                // For landscape images, create a standard slide
+                createSingleSlide(currentImg);
+            }
         }
+        
+        console.log(`Created ${slideshowContainer.children.length} slides in total`);
+    }
+    
+    function createSingleSlide(imgSrc) {
+        const slide = document.createElement('div');
+        slide.className = 'slide';
+        
+        const imgElement = document.createElement('img');
+        imgElement.src = imgSrc;
+        slide.appendChild(imgElement);
+        
+        slideshowContainer.appendChild(slide);
+    }
+    
+    function createDualSlide(imgSrc1, imgSrc2) {
+        const slide = document.createElement('div');
+        slide.className = 'slide dual-slide';
+        
+        // First vertical image
+        const img1 = document.createElement('img');
+        img1.src = imgSrc1;
+        img1.className = 'vertical-image';
+        slide.appendChild(img1);
+        
+        // Separator
+        const separator = document.createElement('div');
+        separator.className = 'vertical-dual-separator';
+        slide.appendChild(separator);
+        
+        // Second vertical image
+        const img2 = document.createElement('img');
+        img2.src = imgSrc2;
+        img2.className = 'vertical-image';
+        slide.appendChild(img2);
+        
+        slideshowContainer.appendChild(slide);
+        console.log(`Created dual slide with images: ${imgSrc1} and ${imgSrc2}`);
     }
     
     function createStandardSlides() {
-        console.log("Creating standard slides");
+        slideshowContainer.innerHTML = '';
+        
         images.forEach((imgSrc, index) => {
             const slide = document.createElement('div');
             slide.className = 'slide';
@@ -117,49 +178,6 @@ document.addEventListener('DOMContentLoaded', function() {
             slideshowContainer.appendChild(slide);
             console.log(`Created slide ${index+1}/${images.length}`);
         });
-    }
-    
-    function createDualSlides() {
-        console.log("Creating dual slides layout");
-        // Create slides for landscape images
-        landscapeImages.forEach((imgSrc, index) => {
-            const slide = document.createElement('div');
-            slide.className = 'slide';
-            
-            const imgElement = document.createElement('img');
-            imgElement.src = imgSrc;
-            slide.appendChild(imgElement);
-            
-            slideshowContainer.appendChild(slide);
-            console.log(`Created landscape slide ${index+1}/${landscapeImages.length}`);
-        });
-        
-        // Create dual slides for vertical images
-        for (let i = 0; i < verticalImages.length; i += 2) {
-            const slide = document.createElement('div');
-            slide.className = 'slide dual-slide';
-            
-            const img1 = document.createElement('img');
-            img1.src = verticalImages[i];
-            img1.className = 'vertical-image';
-            slide.appendChild(img1);
-            
-            if (i + 1 < verticalImages.length) {
-                const separator = document.createElement('div');
-                separator.className = 'vertical-dual-separator';
-                slide.appendChild(separator);
-                
-                const img2 = document.createElement('img');
-                img2.src = verticalImages[i + 1];
-                img2.className = 'vertical-image';
-                slide.appendChild(img2);
-                console.log(`Created dual slide with images: ${verticalImages[i]} and ${verticalImages[i+1]}`);
-            } else {
-                console.log(`Created dual slide with single image: ${verticalImages[i]}`);
-            }
-            
-            slideshowContainer.appendChild(slide);
-        }
     }
     
     function showSlide(index) {

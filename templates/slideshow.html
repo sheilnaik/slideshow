@@ -1,43 +1,181 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Slideshow</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body class="slideshow-page">
-    <div id="slideshow-container">
+{% extends 'base.html' %}
+
+{% block title %}Photo Slideshow{% endblock %}
+
+{% block head %}
+<style>
+    /* Custom styles that work with Tailwind */
+    .slide {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        transition: opacity 1s ease-in-out;
+        background-color: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .slide.active {
+        opacity: 1;
+    }
+    
+    .slide img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+    
+    .dual-slide {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: black;
+        height: 100%;
+        width: 100%;
+    }
+    
+    .vertical-image {
+        max-height: 98%;
+        max-width: 45%;
+        object-fit: contain;
+    }
+    
+    .vertical-dual-separator {
+        width: 4px;
+        height: 100%;
+        background-color: #000;
+        margin: 0 15px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Animations for hamburger icon */
+    .hamburger-line {
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    
+    .hamburger-active .line-1 {
+        transform: translateY(8px) rotate(45deg);
+    }
+    
+    .hamburger-active .line-2 {
+        opacity: 0;
+    }
+    
+    .hamburger-active .line-3 {
+        transform: translateY(-8px) rotate(-45deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-black text-white h-screen overflow-hidden relative">
+    <div id="slideshow-container" class="w-full h-full">
         <!-- Images will be loaded here via JavaScript -->
-        <div id="loading">Loading photos...</div>
+        <div id="loading" class="absolute inset-0 flex items-center justify-center text-xl font-light">
+            Loading photos...
+        </div>
     </div>
 
     <!-- Hamburger menu icon -->
-    <div class="hamburger-icon" id="hamburger-icon">
-        <div class="bar1"></div>
-        <div class="bar2"></div>
-        <div class="bar3"></div>
+    <div id="hamburger-icon" class="fixed top-4 right-4 z-50 w-10 h-10 flex flex-col justify-center items-center bg-black bg-opacity-50 rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity duration-300">
+        <div class="hamburger-line line-1 w-6 h-0.5 bg-white mb-1.5"></div>
+        <div class="hamburger-line line-2 w-6 h-0.5 bg-white mb-1.5"></div>
+        <div class="hamburger-line line-3 w-6 h-0.5 bg-white"></div>
     </div>
 
-    <!-- Slideshow controls in dropdown menu -->
-    <div class="slideshow-controls" id="slideshow-controls">
-        <a href="{{ url_for('index') }}" class="btn-back">Back to Settings</a>
-        <button id="btn-play-pause" class="btn-control">Pause</button>
-        <button id="btn-prev" class="btn-control">Previous</button>
-        <button id="btn-next" class="btn-control">Next</button>
-        <button id="btn-fullscreen" class="btn-control btn-fullscreen">Fullscreen</button>
+    <!-- Slideshow controls overlay -->
+    <div id="slideshow-controls" class="fixed top-0 right-0 z-40 w-64 h-screen bg-black bg-opacity-90 transform translate-x-full transition-transform duration-300 ease-in-out overflow-y-auto flex flex-col p-6">
+        <a href="{{ url_for('index') }}" class="block w-full mb-6 py-3 px-4 text-center bg-gray-800 hover:bg-gray-700 rounded-md text-white transition duration-150">
+            Back to Settings
+        </a>
+        
+        <div class="space-y-3">
+            <button id="btn-play-pause" class="block w-full py-3 px-4 text-center bg-primary hover:bg-blue-600 rounded-md text-white transition duration-150">
+                Pause
+            </button>
+            
+            <button id="btn-prev" class="block w-full py-3 px-4 text-center bg-gray-800 hover:bg-gray-700 rounded-md text-white transition duration-150">
+                Previous
+            </button>
+            
+            <button id="btn-next" class="block w-full py-3 px-4 text-center bg-gray-800 hover:bg-gray-700 rounded-md text-white transition duration-150">
+                Next
+            </button>
+        </div>
+        
+        <div class="mt-auto pt-4 border-t border-gray-700">
+            <button id="btn-fullscreen" class="block w-full py-3 px-4 text-center bg-gray-800 hover:bg-gray-700 rounded-md text-white transition duration-150">
+                Fullscreen
+            </button>
+        </div>
     </div>
+</div>
+{% endblock %}
 
-    <script>
-        // Pass configuration from Flask to JavaScript
-        const slideshowConfig = {
-            effect: "{{ effect }}",
-            displayTime: parseInt("{{ display_time }}") * 1000, // Convert to milliseconds
-            order: "{{ order }}",
-            photos: JSON.parse('{{ photos|tojson|safe }}'), // Parse the JSON string from Flask
-            folderPath: "{{ folder_path }}" // Path to the photos folder
-        };
-    </script>
-    <script src="{{ url_for('static', filename='js/slideshow.js') }}"></script>
-</body>
-</html> 
+{% block scripts %}
+<script>
+    // Pass configuration from Flask to JavaScript
+    const slideshowConfig = {
+        effect: "{{ effect }}",
+        displayTime: parseInt("{{ display_time }}") * 1000, // Convert to milliseconds
+        order: "{{ order }}",
+        photos: JSON.parse('{{ photos|tojson|safe }}'), // Parse the JSON string from Flask
+        folderPath: "{{ folder_path }}" // Path to the photos folder
+    };
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the slideshow container
+        const slideshowContainer = document.getElementById('slideshow-container');
+        const loadingElement = document.getElementById('loading');
+        
+        // Get control buttons
+        const btnPlayPause = document.getElementById('btn-play-pause');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const btnFullscreen = document.getElementById('btn-fullscreen');
+        
+        // Get hamburger menu and controls
+        const hamburgerIcon = document.getElementById('hamburger-icon');
+        const slideshowControls = document.getElementById('slideshow-controls');
+        
+        // Toggle menu when clicking hamburger icon
+        hamburgerIcon.addEventListener('click', function() {
+            this.classList.toggle('hamburger-active');
+            
+            // Toggle the menu visibility
+            if (slideshowControls.classList.contains('translate-x-full')) {
+                slideshowControls.classList.remove('translate-x-full');
+            } else {
+                slideshowControls.classList.add('translate-x-full');
+            }
+        });
+        
+        // Show hamburger on mouse movement
+        slideshowContainer.addEventListener('mousemove', function() {
+            hamburgerIcon.classList.add('opacity-100');
+            resetMenuTimeout();
+        });
+        
+        // Hide menu when mouse leaves container
+        slideshowContainer.addEventListener('mouseleave', function() {
+            hideMenu();
+        });
+        
+        let menuTimeout = null;
+        
+        function resetMenuTimeout() {
+            if (menuTimeout) clearTimeout(menuTimeout);
+            menuTimeout = setTimeout(hideMenu, 3000);
+        }
+        
+        function hideMenu() {
+            hamburgerIcon.classList.remove('opacity-100');
+            hamburgerIcon.classList.remove('hamburger-active');
+            slideshowControls.classList.add('translate-x-full');
+        }
+    });
+</script>
+<script src="{{ url_for('static', filename='js/slideshow.js') }}"></script>
+{% endblock %} 

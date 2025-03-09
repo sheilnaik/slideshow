@@ -1,102 +1,125 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Slideshow</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-    <div class="container">
-        <div class="welcome-card">
-            <h1>Welcome to Photo Slideshow</h1>
-            <p>Configure your slideshow experience and click the button below to begin.</p>
-            
-            <form action="{{ url_for('slideshow') }}" method="get">
-                <div class="option-group">
-                    <label for="folder_path">Photos Location:</label>
-                    <div class="folder-select">
-                        <input type="text" id="folder_path" name="folder_path" placeholder="Enter path to your photos folder" value="{{ default_folder }}" required>
-                        <button type="button" id="browse-button" class="browse-btn">Browse...</button>
-                        <span class="tooltip">Enter the full path to the folder containing your photos</span>
-                    </div>
-                    <div class="folder-info">
-                        <p><strong>Note:</strong> Your photos stay on your computer. No uploading happens.</p>
-                    </div>
+{% extends 'base.html' %}
+
+{% block title %}Photo Slideshow{% endblock %}
+
+{% block content %}
+<div class="flex justify-center items-center min-h-screen p-4 md:p-8">
+    <div class="w-full max-w-2xl bg-white rounded-xl shadow-xl p-6 md:p-8">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Photo Slideshow</h1>
+        <p class="text-center text-gray-600 mb-6">Configure your slideshow experience and click the button below to begin.</p>
+        
+        <form action="{{ url_for('slideshow') }}" method="get" class="space-y-6">
+            <!-- Photos Location -->
+            <div class="space-y-2">
+                <label for="folder_path" class="block text-sm font-medium text-gray-700">Photos Location:</label>
+                <div class="flex items-center">
+                    <input type="text" id="folder_path" name="folder_path" 
+                        placeholder="Enter path to your photos folder" 
+                        value="{{ default_folder }}" required
+                        class="flex-1 block w-full rounded-l-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 text-sm py-2 px-3 border">
+                    <button type="button" id="browse-button" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-primary hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-150">
+                        Browse...
+                    </button>
                 </div>
-                
-                <div class="option-group">
-                    <label for="effect">Animation Effect:</label>
-                    <div class="radio-group">
-                        <input type="radio" id="vertical-dual" name="effect" value="vertical-dual" checked>
-                        <label for="vertical-dual">Vertical Dual</label>
-                        
-                        <input type="radio" id="standard" name="effect" value="standard">
-                        <label for="standard">Standard Slideshow</label>
-                    </div>
+                <div class="mt-1 text-xs text-gray-500 italic">
+                    <strong class="text-primary">Note:</strong> Your photos stay on your computer. No uploading happens.
                 </div>
-                
-                <div class="option-group">
-                    <label for="display_time">Display Time (seconds):</label>
-                    <select name="display_time" id="display_time">
-                        <option value="3">3 seconds</option>
-                        <option value="5">5 seconds</option>
-                        <option value="7">7 seconds</option>
-                        <option value="10" selected>10 seconds</option>
-                        <option value="15">15 seconds</option>
-                    </select>
-                </div>
-                
-                <div class="option-group">
-                    <label for="order">Photo Order:</label>
-                    <div class="radio-group">
-                        <input type="radio" id="random" name="order" value="random" checked>
-                        <label for="random">Random</label>
-                        
-                        <input type="radio" id="sequential" name="order" value="sequential">
-                        <label for="sequential">Sequential</label>
-                    </div>
-                </div>
-                
-                <button type="submit" class="begin-button">Begin Slideshow</button>
-            </form>
-            
-            <div class="instructions">
-                <h3>How to use:</h3>
-                <p>Enter the full path to a folder containing your photos.</p>
-                <p>Supported formats: .jpg, .jpeg, .png, .gif, .heic, .heif</p>
-                <p><strong>Vertical Dual mode:</strong> Shows two vertical photos side by side on widescreen displays, while displaying landscape photos normally.</p>
             </div>
+            
+            <!-- Animation Effect -->
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Animation Effect:</label>
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-6">
+                    <div class="flex items-center">
+                        <input type="radio" id="vertical-dual" name="effect" value="vertical-dual" checked
+                            class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                        <label for="vertical-dual" class="ml-2 block text-sm text-gray-700">Vertical Dual</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="standard" name="effect" value="standard"
+                            class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                        <label for="standard" class="ml-2 block text-sm text-gray-700">Standard Slideshow</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Display Time -->
+            <div class="space-y-2">
+                <label for="display_time" class="block text-sm font-medium text-gray-700">Display Time (seconds):</label>
+                <select name="display_time" id="display_time" 
+                    class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
+                    <option value="3">3 seconds</option>
+                    <option value="5">5 seconds</option>
+                    <option value="7">7 seconds</option>
+                    <option value="10" selected>10 seconds</option>
+                    <option value="15">15 seconds</option>
+                </select>
+            </div>
+            
+            <!-- Photo Order -->
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Photo Order:</label>
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-6">
+                    <div class="flex items-center">
+                        <input type="radio" id="random" name="order" value="random" checked
+                            class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                        <label for="random" class="ml-2 block text-sm text-gray-700">Random</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="sequential" name="order" value="sequential"
+                            class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                        <label for="sequential" class="ml-2 block text-sm text-gray-700">Sequential</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Begin Button -->
+            <button type="submit" 
+                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-150">
+                Begin Slideshow
+            </button>
+        </form>
+        
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            <h3 class="text-lg font-medium text-gray-800 mb-2">How to use:</h3>
+            <ul class="space-y-2 text-sm text-gray-600">
+                <li>Enter the full path to a folder containing your photos.</li>
+                <li>Supported formats: .jpg, .jpeg, .png, .gif, .heic, .heif</li>
+                <li><strong>Vertical Dual mode:</strong> Shows two vertical photos side by side on widescreen displays, while displaying landscape photos normally.</li>
+            </ul>
         </div>
     </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Handle folder browse button
+    document.getElementById('browse-button').addEventListener('click', function() {
+        openServerBrowser();
+    });
     
-    <script>
-        // Handle folder browse button
-        document.getElementById('browse-button').addEventListener('click', function() {
-            openServerBrowser();
-        });
+    // Function to open server-side folder browser
+    function openServerBrowser() {
+        const width = 800;
+        const height = 600;
+        const left = (window.innerWidth - width) / 2;
+        const top = (window.innerHeight - height) / 2;
         
-        // Function to open server-side folder browser
-        function openServerBrowser() {
-            const width = 800;
-            const height = 600;
-            const left = (window.innerWidth - width) / 2;
-            const top = (window.innerHeight - height) / 2;
-            
-            // Open the browser in a popup window
-            const browserWindow = window.open(
-                '/browse',
-                'folder_browser',
-                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
-            );
-            
-            // Listen for messages from the browser window
-            window.addEventListener('message', function(event) {
-                if (event.data.type === 'FOLDER_SELECTED') {
-                    document.getElementById('folder_path').value = event.data.path;
-                }
-            });
-        }
-    </script>
-</body>
-</html> 
+        // Open the browser in a popup window
+        const browserWindow = window.open(
+            '/browse',
+            'folder_browser',
+            `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+        
+        // Listen for messages from the browser window
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'FOLDER_SELECTED') {
+                document.getElementById('folder_path').value = event.data.path;
+            }
+        });
+    }
+</script>
+{% endblock %} 
