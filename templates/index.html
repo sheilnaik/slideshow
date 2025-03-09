@@ -14,6 +14,18 @@
             
             <form action="{{ url_for('slideshow') }}" method="get">
                 <div class="option-group">
+                    <label for="folder_path">Photos Location:</label>
+                    <div class="folder-select">
+                        <input type="text" id="folder_path" name="folder_path" placeholder="Enter path to your photos folder" value="{{ default_folder }}" required>
+                        <button type="button" id="browse-button" class="browse-btn">Browse...</button>
+                        <span class="tooltip">Enter the full path to the folder containing your photos</span>
+                    </div>
+                    <div class="folder-info">
+                        <p><strong>Note:</strong> Your photos stay on your computer. No uploading happens.</p>
+                    </div>
+                </div>
+                
+                <div class="option-group">
                     <label for="effect">Animation Effect:</label>
                     <div class="radio-group">
                         <input type="radio" id="vertical-dual" name="effect" value="vertical-dual" checked>
@@ -50,12 +62,41 @@
             </form>
             
             <div class="instructions">
-                <h3>How to add photos:</h3>
-                <p>Place your photos in the "photos" folder within the project directory.</p>
+                <h3>How to use:</h3>
+                <p>Enter the full path to a folder containing your photos.</p>
                 <p>Supported formats: .jpg, .jpeg, .png, .gif, .heic, .heif</p>
                 <p><strong>Vertical Dual mode:</strong> Shows two vertical photos side by side on widescreen displays, while displaying landscape photos normally.</p>
             </div>
         </div>
     </div>
+    
+    <script>
+        // Handle folder browse button
+        document.getElementById('browse-button').addEventListener('click', function() {
+            openServerBrowser();
+        });
+        
+        // Function to open server-side folder browser
+        function openServerBrowser() {
+            const width = 800;
+            const height = 600;
+            const left = (window.innerWidth - width) / 2;
+            const top = (window.innerHeight - height) / 2;
+            
+            // Open the browser in a popup window
+            const browserWindow = window.open(
+                '/browse',
+                'folder_browser',
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+            );
+            
+            // Listen for messages from the browser window
+            window.addEventListener('message', function(event) {
+                if (event.data.type === 'FOLDER_SELECTED') {
+                    document.getElementById('folder_path').value = event.data.path;
+                }
+            });
+        }
+    </script>
 </body>
 </html> 

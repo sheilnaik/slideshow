@@ -343,4 +343,75 @@ select {
     background-color: #000;
     margin: 0 15px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.folder-select {
+    position: relative;
+    width: 100%;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.folder-select input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px 0 0 4px;
+    font-size: 14px;
+}
+
+.browse-btn {
+    padding: 10px 15px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.browse-btn:hover {
+    background-color: #2980b9;
+}
+
+.folder-select .tooltip {
+    position: absolute;
+    background-color: #f9f9f9;
+    color: #333;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+    width: 200px;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+.folder-select:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.folder-info {
+    margin-top: 5px;
+    padding: 5px 0;
+}
+
+.folder-info p {
+    font-size: 12px;
+    color: #666;
+    margin: 0;
+    font-style: italic;
+}
+
+.folder-info strong {
+    color: #2980b9;
 } 

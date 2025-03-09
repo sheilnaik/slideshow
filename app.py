@@ -4,7 +4,7 @@ import json
 import cv2
 import numpy as np
 import time
-from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, abort
 from PIL import Image
 import pillow_heif
 import tempfile
@@ -21,24 +21,17 @@ app = Flask(__name__,
             static_folder='static',
             template_folder='templates')
 
-# Configure photos directory
-PHOTOS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'photos')
-logger.info(f"Photos directory: {PHOTOS_DIR}")
-
-# Create photos directory if it doesn't exist
-if not os.path.exists(PHOTOS_DIR):
-    os.makedirs(PHOTOS_DIR)
-
 # Create a temporary directory for converted HEIC files
 TEMP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'temp_converted')
 if not os.path.exists(TEMP_DIR):
     os.makedirs(TEMP_DIR)
 
-# Cache for storing face detection results
-face_cache = {}
-
 # Configuration
-PHOTOS_FOLDER = 'photos'
+DEFAULT_PHOTOS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'photos')
+# Create default photos directory if it doesn't exist
+if not os.path.exists(DEFAULT_PHOTOS_DIR):
+    os.makedirs(DEFAULT_PHOTOS_DIR)
+
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'heic', 'heif'}
 
 def allowed_file(filename):
@@ -79,20 +72,80 @@ def convert_heic_to_jpeg(heic_path):
 
 @app.route('/')
 def index():
-    # Get list of photos in the photos directory
-    photos = []
-    if os.path.exists(PHOTOS_FOLDER):
-        photos = [f for f in os.listdir(PHOTOS_FOLDER) if allowed_file(f)]
-        photos.sort()  # Sort photos alphabetically
-        logger.info(f"Found {len(photos)} photos: {photos}")
+    """Render the landing page with slideshow configuration options."""
+    # Use the last used folder or the default
+    default_folder = request.cookies.get('last_folder', DEFAULT_PHOTOS_DIR)
     
-    return render_template('index.html', photos=photos)
+    return render_template('index.html', default_folder=default_folder)
+
+@app.route('/browse_folders')
+def browse_folders():
+    """API endpoint to browse folders on the server."""
+    path = request.args.get('path', os.path.expanduser('~'))
+    
+    # Security checks
+    if not os.path.exists(path):
+        return jsonify(error="Path does not exist"), 404
+    
+    if not os.path.isdir(path):
+        return jsonify(error="Path is not a directory"), 400
+    
+    try:
+        # Get parent directory for navigation
+        parent_dir = os.path.dirname(os.path.abspath(path))
+        
+        # List directories in the path
+        dirs = []
+        for item in os.listdir(path):
+            item_path = os.path.join(path, item)
+            if os.path.isdir(item_path) and not item.startswith('.'):
+                dirs.append({
+                    'name': item,
+                    'path': item_path
+                })
+        
+        # Sort directories alphabetically
+        dirs.sort(key=lambda x: x['name'].lower())
+        
+        return jsonify({
+            'current_path': path,
+            'parent_path': parent_dir if parent_dir != path else None,
+            'directories': dirs
+        })
+    except Exception as e:
+        logger.error(f"Error browsing directory {path}: {str(e)}")
+        return jsonify(error=str(e)), 500
+
+@app.route('/browse')
+def browse():
+    """Render the folder browser page."""
+    start_path = request.args.get('path', os.path.expanduser('~'))
+    
+    return render_template('browser.html', start_path=start_path)
 
 @app.route('/photos/<path:filename>')
 def serve_photo(filename):
     """Serve photo files, converting HEIC to JPEG if necessary."""
-    logger.debug(f"Serving photo: {filename}")
-    file_path = os.path.join(PHOTOS_FOLDER, filename)
+    folder_path = request.args.get('folder', '')
+    
+    if not folder_path:
+        # No folder specified, return error
+        abort(400, "No folder path specified")
+    
+    if not os.path.exists(folder_path):
+        # Folder doesn't exist, return error
+        abort(404, f"Folder not found: {folder_path}")
+
+    file_path = os.path.join(folder_path, filename)
+    
+    # Security check to prevent directory traversal
+    if not os.path.normpath(file_path).startswith(os.path.normpath(folder_path)):
+        abort(403, "Access denied")
+    
+    if not os.path.exists(file_path):
+        abort(404, f"File not found: {filename}")
+    
+    logger.debug(f"Serving photo: {filename} from {folder_path}")
     
     # If the file is HEIC/HEIF, convert it to JPEG
     if filename.lower().endswith(('.heic', '.heif')):
@@ -106,32 +159,50 @@ def serve_photo(filename):
             return "Error converting HEIC file", 500
     
     logger.debug(f"Serving original file: {filename}")
-    return send_from_directory(PHOTOS_FOLDER, filename)
+    return send_file(file_path)
 
 @app.route('/slideshow')
 def slideshow():
     """Render the slideshow page."""
+    # Get folder path from the form
+    folder_path = request.args.get('folder_path', '')
+    
+    # Validate folder
+    if not folder_path or not os.path.exists(folder_path):
+        if not folder_path:
+            error_msg = "Please provide a folder path."
+        else:
+            error_msg = f"The folder '{folder_path}' does not exist."
+        return render_template('error.html', error=error_msg)
+    
     # Get configuration options from the query parameters
     effect = request.args.get('effect', 'standard')
     display_time = request.args.get('display_time', '5')
     order = request.args.get('order', 'sequential')
     
-    logger.info(f"Starting slideshow with effect={effect}, display_time={display_time}, order={order}")
+    logger.info(f"Starting slideshow with folder={folder_path}, effect={effect}, display_time={display_time}, order={order}")
     
-    # Get list of photos in the photos directory
+    # Get list of photos in the specified directory
     photos = []
-    for filename in os.listdir(PHOTOS_DIR):
-        if allowed_file(filename):
-            # For HEIC files, verify they can be converted
-            if filename.lower().endswith(('.heic', '.heif')):
-                file_path = os.path.join(PHOTOS_DIR, filename)
-                converted_path = convert_heic_to_jpeg(file_path)
-                if converted_path:
-                    photos.append(filename)
+    try:
+        for filename in os.listdir(folder_path):
+            if allowed_file(filename):
+                # For HEIC files, verify they can be converted
+                if filename.lower().endswith(('.heic', '.heif')):
+                    file_path = os.path.join(folder_path, filename)
+                    converted_path = convert_heic_to_jpeg(file_path)
+                    if converted_path:
+                        photos.append(filename)
+                    else:
+                        logger.warning(f"Skipping unreadable HEIC file: {filename}")
                 else:
-                    logger.warning(f"Skipping unreadable HEIC file: {filename}")
-            else:
-                photos.append(filename)
+                    photos.append(filename)
+    except Exception as e:
+        logger.error(f"Error reading directory {folder_path}: {str(e)}")
+        return render_template('error.html', error=f"Error reading directory: {str(e)}")
+    
+    if not photos:
+        return render_template('error.html', error=f"No supported images found in {folder_path}")
     
     logger.info(f"Found {len(photos)} valid photos for slideshow")
     
@@ -145,87 +216,37 @@ def slideshow():
     else:
         photos.sort()
     
-    return render_template(
+    # Set a cookie with the folder path for next time
+    response = render_template(
         'slideshow.html',
         photos=photos,
+        folder_path=folder_path,
         effect=effect,
         display_time=display_time,
         order=order
     )
-
-def detect_faces(filename):
-    """Detect faces in an image and cache the results."""
-    # Check if image has already been processed
-    if filename in face_cache:
-        return face_cache[filename]
     
-    # Load the image
-    image_path = os.path.join(PHOTOS_DIR, filename)
+    from flask import make_response
+    resp = make_response(response)
+    resp.set_cookie('last_folder', folder_path)
     
-    # If the image is HEIC, convert it first
-    if filename.lower().endswith(('.heic', '.heif')):
-        image_path = convert_heic_to_jpeg(image_path)
-        if not image_path:
-            face_cache[filename] = []
-            return []
-    
-    image = cv2.imread(image_path)
-    
-    if image is None:
-        # If the image cannot be read, return default values
-        face_cache[filename] = []
-        return []
-    
-    # Convert to grayscale for face detection
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Load pre-trained face cascade classifier
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    
-    # Detect faces
-    faces = face_cascade.detectMultiScale(
-        gray,
-        scaleFactor=1.1,
-        minNeighbors=5,
-        minSize=(30, 30)
-    )
-    
-    # Get image dimensions
-    height, width = image.shape[:2]
-    
-    # Process detected faces
-    face_data = []
-    if len(faces) > 0:
-        # Convert face detection results to a list of face objects
-        for (x, y, w, h) in faces:
-            # Normalize coordinates to be relative to image size (0.0 to 1.0)
-            face_info = {
-                'x': float(x) / width,
-                'y': float(y) / height,
-                'width': float(w) / width,
-                'height': float(h) / height
-            }
-            face_data.append(face_info)
-    else:
-        # If no faces detected, use center of image
-        face_data = [{
-            'x': 0.3,  # Slightly off-center for better composition
-            'y': 0.3,
-            'width': 0.4,
-            'height': 0.4
-        }]
-    
-    # Cache the results
-    face_cache[filename] = face_data
-    return face_data
+    return resp
 
 @app.route('/get_photos')
 def get_photos():
     """API endpoint to get the list of photos."""
+    folder_path = request.args.get('folder', '')
+    
+    if not folder_path or not os.path.exists(folder_path):
+        return jsonify(error="Invalid folder path"), 400
+    
     photos = []
-    for filename in os.listdir(PHOTOS_DIR):
-        if allowed_file(filename):
-            photos.append(filename)
+    try:
+        for filename in os.listdir(folder_path):
+            if allowed_file(filename):
+                photos.append(filename)
+    except Exception as e:
+        return jsonify(error=f"Error reading directory: {str(e)}"), 500
     
     # Set random seed based on current time for true randomness
     random.seed(int(time.time()))

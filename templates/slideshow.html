@@ -34,7 +34,8 @@
             effect: "{{ effect }}",
             displayTime: parseInt("{{ display_time }}") * 1000, // Convert to milliseconds
             order: "{{ order }}",
-            photos: JSON.parse('{{ photos|tojson|safe }}') // Parse the JSON string from Flask
+            photos: JSON.parse('{{ photos|tojson|safe }}'), // Parse the JSON string from Flask
+            folderPath: "{{ folder_path }}" // Path to the photos folder
         };
     </script>
     <script src="{{ url_for('static', filename='js/slideshow.js') }}"></script>

@@ -23,14 +23,18 @@ document.addEventListener('DOMContentLoaded', function() {
     let landscapeImages = [];
     let menuTimeout = null;
     let isFullscreen = false;
+    let folderPath = '';
     
     // Initialize slideshow with configuration from Flask
     function init() {
         console.log("Initializing slideshow with config:", slideshowConfig);
         effect = slideshowConfig.effect;
-        images = slideshowConfig.photos.map(photo => `/photos/${photo}`);
+        folderPath = encodeURIComponent(slideshowConfig.folderPath);
         
-        console.log(`Total images: ${images.length}`);
+        // Add folder path parameter to image URLs
+        images = slideshowConfig.photos.map(photo => `/photos/${photo}?folder=${folderPath}`);
+        
+        console.log(`Total images: ${images.length} from folder: ${folderPath}`);
         
         if (effect === 'vertical-dual') {
             preloadAndSortImages(() => {
@@ -55,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (images.length === 0) {
             console.error("No images to display");
-            loadingElement.textContent = "No images found in photos directory";
+            loadingElement.textContent = "No images found in selected directory";
             return;
         }
         
@@ -81,6 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
             img.onerror = function() {
                 console.error('Failed to load image:', imgSrc);
                 loadedCount++;
+                loadingElement.textContent = `Error loading some images (${loadedCount}/${images.length})`;
                 if (loadedCount === images.length) {
                     callback();
                 }
